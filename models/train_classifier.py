@@ -60,7 +60,7 @@ def build_model():
     parameters = {'vect__ngram_range': ((1, 1), (1, 2)),'tfidf__norm':['l1','l2'], 'clf__estimator__n_neighbors': [5,10],
     'clf__estimator__weights': ['uniform', 'distance']}
 
-    cv = GridSearchCV(pipeline, param_grid=parameters, verbose=2)
+    cv = GridSearchCV(pipeline, param_grid=parameters, verbose=2, n_jobs=4)
     return cv
 
 

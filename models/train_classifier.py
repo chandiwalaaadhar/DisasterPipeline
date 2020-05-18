@@ -15,17 +15,33 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics import classification_report, accuracy_score
 
 def load_data(database_filepath):
-    engine = create_engine('sqlite:///data.db')
-    df = pd.read_sql_table('df', con=engine)
+    """
+    Loads data from database
+    Args:
+        database_filepath: path to database
+    Returns:
+        (DataFrame) X: feature
+        (DataFrame) Y: labels
+    """
+    engine = create_engine('sqlite:///'+database_filepath)
+    df = pd.read_sql_table('disastertab', con=engine)
     X = df.iloc[:,1]
     Y = df.iloc[:,4:]
     category_names = Y.columns
-    return X,Y,category_names
+    return X, Y, category_names
 
 
 def tokenize(text):
+    """
+    Tokenizes a given text.
+    Args:
+        text: text string
+    Returns:
+        (str[]): array of clean tokens
+    """
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
+
     clean_tokens = []
     for tok in tokens:
         clean_tok = lemmatizer.lemmatize(tok).lower().strip()
@@ -35,33 +51,43 @@ def tokenize(text):
 
 
 def build_model():
-    pipeline = Pipeline([
-        
-        ('text_pipeline', Pipeline([
-            ('vect', CountVectorizer(tokenizer=tokenize)),
-            ('tfidf', TfidfTransformer())
-        ])),
+    """Builds classification model """
 
-        ('clf', MultiOutputClassifier(KNeighborsClassifier()))
-    ])
-    parameters = {'tfidf__norm': ['l1','l2'],'tfidf__sublinear_tf': [True, False],
-              'vect__ngram_range': ((1, 1), (1, 2)), 'clf__estimator__min_samples_split': [2, 4],
-              'clf__estimator__n_neighbors': [4,5,10],'clf__estimator__weights':['uniform', 'distance']
-    }
+    pipeline = Pipeline([
+            ('vect', CountVectorizer(tokenizer=tokenize)),
+            ('tfidf', TfidfTransformer()), ('clf', MultiOutputClassifier(KNeighborsClassifier()))])
+
+    parameters = {'vect__ngram_range': ((1, 1), (1, 2)),'tfidf__norm':['l1','l2'], 'clf__estimator__n_neighbors': [5,10],
+    'clf__estimator__weights': ['uniform', 'distance']}
 
     cv = GridSearchCV(pipeline, param_grid=parameters, verbose=2)
     return cv
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    Y_pred= model.predict(X_test)
-    print(classification_report(Y_test,Y_pred,target_names=category_names))
-    print("Accuracy scores for each category are:")
+    """
+    Evaluate the model against a test dataset
+    Args:
+        model: Trained model
+        X_test: Test features
+        Y_test: Test labels
+        category_names: String array of category names
+    """
+    y_preds = model.predict(X_test)
+    print(classification_report(y_preds, Y_test.values, target_names=category_names))
+    print("Accuracy Score are\n")
     for col in range(36):
-    print("Accuracy score for " + y_test.columns[col], accuracy_score(y_test.values[:,col],y_pred[:,col]))
-    
+        print("Accuracy score for " + Y_test.columns[col], accuracy_score(Y_test.values[:,col],y_preds[:,col]))
+
+
 def save_model(model, model_filepath):
-    pickle.dump(model_filepath, open(filename, 'wb'))
+    """
+    Save the model to a Python pickle
+    Args:
+        model: Trained model
+        model_filepath: Path where to save the model
+    """
+    pickle.dump(model, open(model_filepath, 'wb'))
 
 
 def main():
@@ -70,13 +96,13 @@ def main():
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-        
+
         print('Building model...')
         model = build_model()
-        
+
         print('Training model...')
         model.fit(X_train, Y_train)
-        
+
         print('Evaluating model...')
         evaluate_model(model, X_test, Y_test, category_names)
 

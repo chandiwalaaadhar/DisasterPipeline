@@ -1,36 +1,68 @@
 import sys
 import pandas as pd
-import sqlite3
 from sqlalchemy import create_engine
-
 def load_data(messages_filepath, categories_filepath):
+    """
+    Function: load data from message and categories csv files and merge them
+    Args
+      messages_filepath(str): messages file path
+      categories_filepath(str): categories files path
+    Return：
+       df： merge messages and categories
+    """
+    # load messages dataset
     messages = pd.read_csv(messages_filepath)
-    categories = pd.read_csv(categories_filepath')
+    # load data from database
+    categories = pd.read_csv(categories_filepath)
     df = messages.merge(categories)
+    return df
+
 def clean_data(df):
+    """
+    Function: clean data
+    Args:
+        df(pd.dataframe):raw dataset
+    Return:
+        df(pd.dataframe):clean dataset
+    """
+    
     # create a dataframe of the 36 individual category columns
-    categories = df['categories'].str.split(';', expand=True)         
+    categories = df['categories'].str.split(";", expand=True)
+
+    # select the first row of the categories dataframe
     row = categories.iloc[0,:]
-    # Slicing up to the second to last character of each string
-    category_colnames = row.apply(lambda x: x[:-2]) 
+
+    category_colnames = row.apply(lambda x: x[:-2])
+
+    # use this row to extract a list of new column names for categories.
+    #category_colnames = row.apply(lambda x:x.split('-')[0]).values.tolist()
+
     # rename the columns of `categories`
     categories.columns = category_colnames
+
     for column in categories:
     # set each value to be the last character of the string
         categories[column] = categories[column].astype('str').str.split('-').str[1]
     # convert column from string to numeric
         categories[column]= pd.to_numeric(categories[column])
-    #joining both the dataframes and dropiing the original category column
+
+    # drop the original categories column from `df`
     df= df.join(categories)
     df.drop(columns=['categories'],inplace=True)
-    #drop duplicated rows
+    #drop duplicates
     df.drop_duplicates(inplace=True)
-                             
+    return df
 
 def save_data(df, database_filename):
-    engine = create_engine('sqlite:///{}'.format(database_filename))
-    df.to_sql('data', engine, index=False)
-
+    """
+    Function: save clean data
+    Args:
+        df(pd.dataframe):clean dataset
+    Return:
+        N/A
+    """
+    engine = create_engine('sqlite:///'+database_filename)
+    df.to_sql("disastertab", engine,if_exists='replace', index=False)
 
 def main():
     if len(sys.argv) == 4:
@@ -43,12 +75,12 @@ def main():
 
         print('Cleaning data...')
         df = clean_data(df)
-        
+
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
         save_data(df, database_filepath)
-        
+
         print('Cleaned data saved to database!')
-    
+
     else:
         print('Please provide the filepaths of the messages and categories '\
               'datasets as the first and second argument respectively, as '\

@@ -23,6 +23,7 @@ def load_data(database_filepath):
         (DataFrame) X: feature
         (DataFrame) Y: labels
     """
+    # reading the cleaned data set and initializing the features and labels
     engine = create_engine('sqlite:///'+database_filepath)
     df = pd.read_sql_table('disastertab', con=engine)
     X = df.iloc[:,1]
@@ -39,6 +40,7 @@ def tokenize(text):
     Returns:
         (str[]): array of clean tokens
     """
+    # Cleaning the text by forming tokens and lemmatizing them
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -52,11 +54,11 @@ def tokenize(text):
 
 def build_model():
     """Builds classification model """
-
+    # Builiding of a pipeline, with set of transforment and machine learning model is implemented
     pipeline = Pipeline([
             ('vect', CountVectorizer(tokenizer=tokenize)),
             ('tfidf', TfidfTransformer()), ('clf', MultiOutputClassifier(KNeighborsClassifier()))])
-
+    #Preparation for GridSearch
     parameters = {'vect__ngram_range': ((1, 1), (1, 2)),'tfidf__norm':['l1','l2'], 'clf__estimator__n_neighbors': [5,10],
     'clf__estimator__weights': ['uniform', 'distance']}
 
@@ -73,7 +75,9 @@ def evaluate_model(model, X_test, Y_test, category_names):
         Y_test: Test labels
         category_names: String array of category names
     """
+    
     y_pred = model.predict(X_test)
+    #Printing Classificiation Report
     print(classification_report(Y_test ,y_pred, target_names=category_names))
     print("Accuracy Score are\n")
     for col in range(36):

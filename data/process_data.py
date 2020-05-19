@@ -12,8 +12,9 @@ def load_data(messages_filepath, categories_filepath):
     """
     # load messages dataset
     messages = pd.read_csv(messages_filepath)
-    # load data from database
+    # load categories dataset
     categories = pd.read_csv(categories_filepath)
+    # merging both into one
     df = messages.merge(categories)
     return df
 
@@ -31,11 +32,10 @@ def clean_data(df):
 
     # select the first row of the categories dataframe
     row = categories.iloc[0,:]
-
+    
+    # use this row to extract a list of new column names for categories.
     category_colnames = row.apply(lambda x: x[:-2])
 
-    # use this row to extract a list of new column names for categories.
-    #category_colnames = row.apply(lambda x:x.split('-')[0]).values.tolist()
 
     # rename the columns of `categories`
     categories.columns = category_colnames

@@ -73,11 +73,11 @@ def evaluate_model(model, X_test, Y_test, category_names):
         Y_test: Test labels
         category_names: String array of category names
     """
-    y_preds = model.predict(X_test)
-    print(classification_report(y_preds, Y_test.values, target_names=category_names))
+    y_pred = model.predict(X_test)
+    print(classification_report(Y_test ,y_pred, target_names=category_names))
     print("Accuracy Score are\n")
     for col in range(36):
-        print("Accuracy score for " + Y_test.columns[col], accuracy_score(Y_test.values[:,col],y_preds[:,col]))
+        print("Accuracy score for " + Y_test.columns[col], accuracy_score(Y_test.values[:,col],y_pred[:,col]))
 
 
 def save_model(model, model_filepath):
@@ -102,12 +102,12 @@ def main():
 
         print('Training model...')
         model.fit(X_train, Y_train)
-
-        print('Evaluating model...')
-        evaluate_model(model, X_test, Y_test, category_names)
-
+        
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
         save_model(model, model_filepath)
+        
+        print('Evaluating model...')
+        evaluate_model(model, X_test, Y_test, category_names)
 
         print('Trained model saved!')
 

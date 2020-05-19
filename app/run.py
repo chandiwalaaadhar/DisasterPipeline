@@ -43,6 +43,8 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
+    #This is a Visualisation that displays type of Message genres
+    genre = df.groupby('genre').count()['id'].sort_values()
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -61,6 +63,25 @@ def index():
                 },
                 'xaxis': {
                     'title': "Genre"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=genre.values,
+                    y=genre.index,
+                    orientation='h'
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Genres',
+                'yaxis': {
+                    'title': "Genre"
+                },
+                'xaxis': {
+                    'title': "Counts"
                 }
             }
         }
